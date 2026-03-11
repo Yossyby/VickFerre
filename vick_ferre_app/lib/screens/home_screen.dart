@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final Function(int) onNavigate;
+
+  const HomeScreen({super.key, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,9 @@ class HomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFF6D00),
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFFFF6D00).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -54,7 +59,7 @@ class HomeScreen extends StatelessWidget {
           ),
           CircleAvatar(
             radius: 25,
-            backgroundColor: Colors.white.withOpacity(0.3),
+            backgroundColor: Colors.white.withValues(alpha: 0.3),
             child: const Icon(Icons.person, color: Colors.white, size: 30),
           ),
         ],
@@ -66,29 +71,53 @@ class HomeScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _statCard(Icons.inventory, '150', 'Total Artículos'),
-        _statCard(Icons.qr_code, '23', 'Escaneados Hoy'),
-        _statCard(Icons.trending_up, '58%', 'Progreso Total'),
+        _statCard(Icons.inventory, '150', 'Total Artículos', true),
+        const SizedBox(width: 10),
+        _statCard(Icons.qr_code, '23', 'Escaneados Hoy', false),
+        const SizedBox(width: 10),
+        _statCard(Icons.trending_up, '58%', 'Progreso Total', false),
       ],
     );
   }
 
-  Widget _statCard(IconData icon, String value, String label) {
+  Widget _statCard(IconData icon, String value, String label, bool isPrimary) {
     return Expanded(
-      child: Card(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
-          child: Column(
-            children: [
-              Icon(icon, color: const Color(0xFFFF6D00)),
-              const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            ],
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isPrimary ? const Color(0xFFFF6D00) : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: isPrimary ? null : Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: isPrimary ? const Color(0xFFFF6D00).withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isPrimary ? Colors.white : const Color(0xFFFF6D00), size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 22, 
+                fontWeight: FontWeight.bold,
+                color: isPrimary ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: isPrimary ? Colors.white70 : Colors.grey.shade600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -99,43 +128,46 @@ class HomeScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            _actionCard(Icons.qr_code_scanner, 'Escanear Artículo', 'Escanea código de barras', true),
+            _actionCard(Icons.qr_code_scanner, 'Escanear Artículo', 'Escanea código de barras', true, () => onNavigate(1)),
             const SizedBox(width: 15),
-            _actionCard(Icons.inventory_2_outlined, 'Inventario', 'Ver lista completa', false),
+            _actionCard(Icons.inventory_2_outlined, 'Inventario', 'Ver lista completa', false, () => onNavigate(3)),
           ],
         ),
         const SizedBox(height: 15),
         Row(
           children: [
-            _actionCard(Icons.add_box_outlined, 'Añadir Artículo', 'Registrar nuevo ítem', false),
+            _actionCard(Icons.add_box_outlined, 'Añadir Artículo', 'Registrar nuevo ítem', false, () => onNavigate(2)),
             const SizedBox(width: 15),
-            _actionCard(Icons.bar_chart_outlined, 'Reportes', 'Ver estadísticas', false),
+            _actionCard(Icons.bar_chart_outlined, 'Reportes', 'Ver estadísticas', false, () => onNavigate(4)),
           ],
         ),
       ],
     );
   }
 
-  Widget _actionCard(IconData icon, String title, String subtitle, bool isPrimary) {
+  Widget _actionCard(IconData icon, String title, String subtitle, bool isPrimary, VoidCallback onTap) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isPrimary ? const Color(0xFFFF6D00) : Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, spreadRadius: 1),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 30, color: isPrimary ? Colors.white : const Color(0xFFFF6D00)),
-            const SizedBox(height: 12),
-            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isPrimary ? Colors.white : Colors.black87)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(fontSize: 11, color: isPrimary ? Colors.white70 : Colors.grey)),
-          ],
+      child: GestureDetector(
+        onTap: onTap, 
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isPrimary ? const Color(0xFFFF6D00) : Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 30, color: isPrimary ? Colors.white : const Color(0xFFFF6D00)),
+              const SizedBox(height: 12),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isPrimary ? Colors.white : Colors.black87)),
+              const SizedBox(height: 4),
+              Text(subtitle, style: TextStyle(fontSize: 11, color: isPrimary ? Colors.white70 : Colors.grey)),
+            ],
+          ),
         ),
       ),
     );
