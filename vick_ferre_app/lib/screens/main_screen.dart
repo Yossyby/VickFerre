@@ -15,18 +15,20 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ScanScreen(),
-    const AddItemScreen(),
-    const InventoryScreen(),
-    const ReportsScreen(),
-    const ProfileScreen(),
-    const Center(child: Text('Añadir')),
-    const Center(child: Text('Inventario')),
-    const Center(child: Text('Reportes')),
-    const Center(child: Text('Perfil')),
-  ];
+  List<Widget> get _screens => [
+        HomeScreen(
+          onNavigate: (int index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
+        const ScanScreen(),
+        const AddItemScreen(),
+        const InventoryScreen(),
+        const ReportsScreen(),
+        const ProfileScreen(),
+      ];
 
   @override
   Widget build(BuildContext context) {
