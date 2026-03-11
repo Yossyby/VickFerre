@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "311891289894",
+    "project_id": "vick-s-e036a",
+    "storage_bucket": "vick-s-e036a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:311891289894:android:5a8c32cd9a4b02492903e7",
+        "android_client_info": {
+          "package_name": "com.example.vick_ferre_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJnYhP-38g9BNE7MXFnNyMU_PSlMlgYVo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
