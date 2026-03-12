@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-// TODO: Asegúrate de importar tu HomeScreen aquí
-// import 'package:tu_proyecto/home_screen.dart'; 
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -17,7 +15,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final TextEditingController _marcaController = TextEditingController();
   final TextEditingController _colorController = TextEditingController();
   final TextEditingController _materialController = TextEditingController();
-  final TextEditingController _stockController = TextEditingController(); // <-- NUEVO: Controlador para stock
+  final TextEditingController _stockController = TextEditingController(); 
+  
+  // <-- NUEVOS: Controladores para precios
+  final TextEditingController _precioProveedorController = TextEditingController();
+  final TextEditingController _precioVentaController = TextEditingController();
   
   String? _selectedUbicacion;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -78,8 +80,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 
   Future<void> _registrarProducto() async {
-    // Validamos que nombre, código y stock no estén vacíos
-    if (_nombreController.text.isEmpty || _codigoController.text.isEmpty || _stockController.text.isEmpty) {
+    // Validamos que nombre, código, stock y PRECIOS no estén vacíos
+    if (_nombreController.text.isEmpty || 
+        _codigoController.text.isEmpty || 
+        _stockController.text.isEmpty ||
+        _precioProveedorController.text.isEmpty ||
+        _precioVentaController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor llena los campos obligatorios (*)')),
       );
@@ -94,7 +100,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'color': _colorController.text.trim(),
         'material': _materialController.text.trim(),
         'ubicacion': _selectedUbicacion ?? 'Sin ubicación',
-        'stock_actual': int.tryParse(_stockController.text.trim()) ?? 0, // <-- NUEVO: Guarda el stock como número
+        'stock_actual': int.tryParse(_stockController.text.trim()) ?? 0,
+        // <-- NUEVOS: Guardamos los precios como decimales (double)
+        'precio_proveedor': double.tryParse(_precioProveedorController.text.trim()) ?? 0.0,
+        'precio_venta': double.tryParse(_precioVentaController.text.trim()) ?? 0.0,
         'fecha_registro': FieldValue.serverTimestamp(),
       });
 
@@ -107,7 +116,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
         _marcaController.clear();
         _colorController.clear();
         _materialController.clear();
-        _stockController.clear(); // Limpiamos el campo de stock
+        _stockController.clear();
+        _precioProveedorController.clear(); // Limpiamos precios
+        _precioVentaController.clear();
         setState(() {
           _selectedUbicacion = null;
         });
@@ -173,15 +184,36 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ],
           ),
           const SizedBox(height: 16),
+
+          // <-- NUEVA SECCIÓN: PRECIOS
+          _buildSectionCard(
+            title: 'Precios',
+            children: [
+              _buildCustomTextField(
+                label: 'Precio Proveedor (Compra) *',
+                hintText: 'Ej: 120.50',
+                controller: _precioProveedorController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 16),
+              _buildCustomTextField(
+                label: 'Precio de Venta *',
+                hintText: 'Ej: 200.00',
+                controller: _precioVentaController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           
           _buildSectionCard(
-            title: 'Inventario y Ubicación', // <-- Cambié el título
+            title: 'Inventario y Ubicación',
             children: [
               _buildCustomTextField(
                 label: 'Stock Inicial *',
                 hintText: 'Ej: 50',
                 controller: _stockController,
-                keyboardType: TextInputType.number, // <-- Abre el teclado numérico
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
               _buildDropdownField(
@@ -201,17 +233,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 child: SizedBox(
                   height: 50,
                   child: OutlinedButton.icon(
-                    // <-- NUEVO: Navegación al HomeScreen
                     onPressed: () {
-                      // Usamos pushReplacement para evitar que se acumulen pantallas en el botón de retroceso
-                      // Asegúrate de cambiar "HomeScreen()" por el nombre exacto de tu clase
-                      /*
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const HomeScreen()),
-                      );
-                      */
-                      // O si usas un BottomNavigationBar, simplemente puedes usar:
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.close, color: Colors.black87, size: 20),
@@ -264,7 +286,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     IconData? suffixIcon,
     required TextEditingController controller,
     VoidCallback? onSuffixPressed,
-    TextInputType? keyboardType, // <-- NUEVO: Para aceptar teclado numérico
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,7 +295,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          keyboardType: keyboardType, // <-- Asignamos el tipo de teclado
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),

@@ -1,6 +1,6 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ¡Importante para conectar a la BD!
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -14,13 +14,7 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _isProcessing = false;
   final List<Map<String, dynamic>> _cartItems = [];
   late MobileScannerController _scannerController;
-
-  final List<Map<String, dynamic>> _mockProducts = [
-    {'id': '1', 'name': 'Taladro Eléctrico 1/2"', 'price': 1250.00},
-    {'id': '2', 'name': 'Pinza de Corte 8"', 'price': 165.00},
-    {'id': '3', 'name': 'Martillo de Goma 16oz', 'price': 120.00},
-    {'id': '4', 'name': 'Cinta Métrica 5m', 'price': 85.00},
-  ];
+  final FirebaseFirestore db = FirebaseFirestore.instance; // Instancia de Firestore
 
   @override
   void initState() {
@@ -51,34 +45,74 @@ class _ScanScreenState extends State<ScanScreen> {
     _scannerController.stop();
   }
 
-  void _onDetect(BarcodeCapture capture) {
+  // AQUÍ SUCEDE LA MAGIA DE LA BASE DE DATOS
+  Future<void> _onDetect(BarcodeCapture capture) async {
     if (_isProcessing || !_isScanning) return;
 
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty) {
+      final String? scannedCode = barcodes.first.rawValue;
+      if (scannedCode == null) return;
+
       setState(() {
         _isProcessing = true;
       });
 
-      final random = Random();
-      final product = _mockProducts[random.nextInt(_mockProducts.length)];
-      _addToCart(product);
+      try {
+        // 1. Buscamos el código en Firebase
+        final querySnapshot = await db
+            .collection('Productos')
+            .where('codigo_barras', isEqualTo: scannedCode)
+            .limit(1) // Solo necesitamos encontrar 1
+            .get();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Código escaneado: ${barcodes.first.rawValue}'),
-          backgroundColor: Colors.green,
-          duration: const Duration(milliseconds: 1000),
-        ),
-      );
+        if (querySnapshot.docs.isNotEmpty) {
+          // 2. Si lo encuentra, sacamos los datos
+          final doc = querySnapshot.docs.first;
+          final data = doc.data();
 
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            _isProcessing = false;
-          });
+          final product = {
+            'id': doc.id,
+            'name': data['nombre'] ?? 'Producto Desconocido',
+            'price': (data['precio_venta'] ?? 0.0).toDouble(),
+          };
+
+          _addToCart(product);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Agregado: ${product['name']}'),
+              backgroundColor: Colors.green,
+              duration: const Duration(milliseconds: 1000),
+            ),
+          );
+        } else {
+          // 3. Si no existe en la BD
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Producto no encontrado: $scannedCode'),
+              backgroundColor: Colors.red,
+              duration: const Duration(milliseconds: 1500),
+            ),
+          );
         }
-      });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al buscar producto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        // Pausa de 2 segundos antes de permitir el siguiente escaneo
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _isProcessing = false;
+            });
+          }
+        });
+      }
     }
   }
 

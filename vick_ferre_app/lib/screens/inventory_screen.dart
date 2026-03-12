@@ -85,11 +85,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
               stream: db.collection('Productos').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFFFF6D00)));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No hay productos"));
+                  return const Center(child: Text("No hay productos", style: TextStyle(color: Colors.grey)));
                 }
 
                 var productos = snapshot.data!.docs;
@@ -109,21 +109,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         itemBuilder: (context, index) {
                           // Obtenemos los datos de cada producto de forma segura
                           var data = productos[index].data() as Map<String, dynamic>;
+                          
+                          int stock = data['stock_actual'] ?? 0;
+                          double precioCompra = (data['precio_proveedor'] ?? 0.0).toDouble();
+                          double precioVenta = (data['precio_venta'] ?? 0.0).toDouble();
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _buildInventoryCard(
                               title: validarDato(data['nombre']),
                               code: validarDato(data['codigo_barras']),
-                              status: (data['stock_actual'] ?? 0) > 5 ? "Lleno" : "Bajo",
-                              statusColor: (data['stock_actual'] ?? 0) > 5 ? Colors.green : Colors.red,
+                              stock: stock,
+                              statusColor: stock >= 5 ? Colors.green : Colors.red,
                               locationStatus: validarDato(data['ubicacion']),
                               color: validarDato(data['color']),
                               material: validarDato(data['material']),
                               brand: validarDato(data['marca']),
-                              office: "Sucursal",
-                              service: "Herramientas",
-                              agency: "Principal",
+                              precioCompra: precioCompra,
+                              precioVenta: precioVenta,
                             ),
                           );
                         },
@@ -139,26 +142,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  // WIDGET DE LA TARJETA (Se mantiene igual, solo corregimos el conteo arriba)
+  // WIDGET DE LA TARJETA (Actualizado con precios reales)
   Widget _buildInventoryCard({
     required String title,
     required String code,
-    required String status,
+    required int stock,
     required Color statusColor,
     required String locationStatus,
     required String color,
     required String material,
     required String brand,
-    required String office,
-    required String service,
-    required String agency,
+    required double precioCompra,
+    required double precioVenta,
   }) {
+    // Determinar texto de status basado en número
+    String statusText = stock >= 5 ? 'Stock: $stock' : 'Bajo: $stock';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
+        ]
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +200,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _buildChip(status, statusColor, statusColor.withOpacity(0.1)),
+                    // Aquí se muestra el stock real con su color (verde si es >5, rojo si es <5)
+                    _buildChip(statusText, statusColor, statusColor.withValues(alpha: 0.1)),
                     const SizedBox(width: 8),
                     _buildChip(locationStatus, Colors.blue.shade700, Colors.blue.shade50, icon: Icons.location_on),
                   ],
@@ -211,13 +220,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   padding: EdgeInsets.symmetric(vertical: 8.0),
                   child: Divider(height: 1),
                 ),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
+                // Aquí quitamos los textos falsos y ponemos los precios
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Oficina: $office', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    Text('Servicio: $service', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    Text('Agencia: $agency', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Costo Proveedor', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        Text('\$${precioCompra.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('Precio Público', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        Text('\$${precioVenta.toStringAsFixed(2)}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.green)),
+                      ],
+                    ),
                   ],
                 ),
               ],
