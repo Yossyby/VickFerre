@@ -35,14 +35,14 @@ class _ScanScreenState extends State<ScanScreen> {
     setState(() {
       _isScanning = true;
     });
-    _scannerController.start();
+    // ¡ELIMINAMOS _scannerController.start()! El widget la prenderá solo.
   }
 
   void _stopScan() {
     setState(() {
       _isScanning = false;
     });
-    _scannerController.stop();
+    // ¡ELIMINAMOS _scannerController.stop()! Al ocultar el widget, la cámara se apaga sola.
   }
 
   // AQUÍ SUCEDE LA MAGIA DE LA BASE DE DATOS
@@ -65,6 +65,8 @@ class _ScanScreenState extends State<ScanScreen> {
             .where('codigo_barras', isEqualTo: scannedCode)
             .limit(1) // Solo necesitamos encontrar 1
             .get();
+
+        if (!mounted) return;
 
         if (querySnapshot.docs.isNotEmpty) {
           // 2. Si lo encuentra, sacamos los datos
@@ -97,6 +99,9 @@ class _ScanScreenState extends State<ScanScreen> {
           );
         }
       } catch (e) {
+
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al buscar producto: $e'),
@@ -147,7 +152,7 @@ class _ScanScreenState extends State<ScanScreen> {
     });
   }
 
-  double get _subtotal => _cartItems.fold(0, (sum, item) => sum + (item['price'] * item['quantity']));
+  double get _subtotal => _cartItems.fold(0.0, (acc, item) => acc + (item['price'] * item['quantity']));
 
   void _showReceiptDialog() {
     _stopScan();
@@ -367,7 +372,7 @@ class _ScanScreenState extends State<ScanScreen> {
                       children: [
                         const Icon(Icons.shopping_cart_outlined, color: Color(0xFFFF6D00)),
                         const SizedBox(width: 8),
-                        Text('Productos Escaneados (${_cartItems.fold(0, (sum, item) => sum + item['quantity'] as int)})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Productos Escaneados (${_cartItems.fold(0, (acc, item) => acc + (item['quantity'] as int))})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     ),
                     if (_cartItems.isNotEmpty)
@@ -481,7 +486,7 @@ class _ScanScreenState extends State<ScanScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         const Text('Productos', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        Text("${_cartItems.fold(0, (sum, item) => sum + item['quantity'] as int)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text("${_cartItems.fold(0, (acc, item) => acc + (item['quantity'] as int))}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],

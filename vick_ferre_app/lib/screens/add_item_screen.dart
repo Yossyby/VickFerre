@@ -28,6 +28,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
     final String? codigoEscaneado = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
+        // 1. Candado para evitar que el pop se ejecute múltiples veces
+        bool barcodeFound = false; 
+        
+        // 2. Controlador dedicado para que lea rapidísimo y sin duplicados
+        final MobileScannerController dialogController = MobileScannerController(
+          detectionSpeed: DetectionSpeed.noDuplicates,
+        );
+
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: SizedBox(
@@ -50,9 +58,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 Expanded(
                   child: ClipRect(
                     child: MobileScanner(
+                      controller: dialogController, // <- Agregamos el controlador aquí
                       onDetect: (capture) {
+                        // Si ya encontramos un código, ignoramos los demás frames
+                        if (barcodeFound) return; 
+
                         final List<Barcode> barcodes = capture.barcodes;
                         if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+                          barcodeFound = true; // Cerramos el candado
+                          dialogController.stop(); // Apagamos la cámara por seguridad
                           Navigator.pop(context, barcodes.first.rawValue);
                         }
                       },
@@ -60,7 +74,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    dialogController.stop(); // Apagamos si el usuario cancela
+                    Navigator.pop(context);
+                  },
                   icon: const Icon(Icons.close, color: Colors.red),
                   label: const Text('Cancelar', style: TextStyle(color: Colors.red)),
                 ),
