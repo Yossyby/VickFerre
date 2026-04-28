@@ -12,6 +12,7 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   bool _isScanning = false;
   bool _isProcessing = false;
+  bool _isFinalizing = false;
   final List<Map<String, dynamic>> _cartItems = [];
   late MobileScannerController _scannerController;
   final FirebaseFirestore db = FirebaseFirestore.instance; // Instancia de Firestore
@@ -137,6 +138,61 @@ class _ScanScreenState extends State<ScanScreen> {
     });
   }
 
+  Future<void> _finalizeSale() async {
+    if (_cartItems.isEmpty) return;
+
+    setState(() {
+      _isFinalizing = true;
+    });
+
+    final double total = _subtotal;
+    final double iva = total * 0.16;
+    final double totalWithIva = total + iva;
+    final WriteBatch batch = db.batch();
+    final saleRef = db.collection('Ventas').doc();
+
+    batch.set(saleRef, {
+      'productos': _cartItems.map((item) {
+        return {
+          'id': item['id'],
+          'nombre': item['name'],
+          'precio': item['price'],
+          'cantidad': item['quantity'],
+          'subtotal': item['price'] * item['quantity'],
+        };
+      }).toList(),
+      'subtotal': total,
+      'iva': iva,
+      'total': totalWithIva,
+      'fecha': FieldValue.serverTimestamp(),
+    });
+
+    for (final item in _cartItems) {
+      final DocumentReference productRef = db.collection('Productos').doc(item['id']);
+      batch.update(productRef, {'stock_actual': FieldValue.increment(-(item['quantity'] as int))});
+    }
+
+    try {
+      await batch.commit();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Venta guardada con éxito'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar la venta: $e'), backgroundColor: Colors.red),
+      );
+      rethrow;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFinalizing = false;
+        });
+      }
+    }
+  }
+
   void _updateQuantity(int index, int delta) {
     setState(() {
       _cartItems[index]['quantity'] += delta;
@@ -160,8 +216,10 @@ class _ScanScreenState extends State<ScanScreen> {
     final double iva = total * 0.16;
     final double totalWithIva = total + iva;
     
-    final dateStr = "${DateTime.now().day} de marzo de 2026";
-    final timeStr = "${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}";
+    final now = DateTime.now();
+    final monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    final dateStr = "${now.day} de ${monthNames[now.month - 1]} de ${now.year}";
+    final timeStr = "${now.hour}:${now.minute.toString().padLeft(2, '0')}";
 
     showDialog(
       context: context,
@@ -497,9 +555,18 @@ class _ScanScreenState extends State<ScanScreen> {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton.icon(
-                  onPressed: _cartItems.isEmpty ? null : _showReceiptDialog,
+                  onPressed: _cartItems.isEmpty || _isFinalizing
+                      ? null
+                      : () async {
+                          try {
+                            await _finalizeSale();
+                            _showReceiptDialog();
+                          } catch (_) {}
+                        },
                   icon: const Icon(Icons.shopping_cart, color: Colors.white),
-                  label: const Text('Finalizar Venta', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  label: _isFinalizing
+                      ? const Text('Guardando...', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))
+                      : const Text('Finalizar Venta', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF6D00),
                     disabledBackgroundColor: Colors.grey.shade300,

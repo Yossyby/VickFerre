@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends StatelessWidget {
+  final bool isDarkMode;
+  final ValueChanged<bool> onThemeModeChanged;
 
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  bool isDarkMode = false;
+  const ProfileScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onThemeModeChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -115,11 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               trailing: Switch(
                 value: isDarkMode,
                 activeColor: const Color(0xFFFF6D00),
-                onChanged: (value) {
-                  setState(() {
-                    isDarkMode = value;
-                  });
-                },
+                onChanged: onThemeModeChanged,
               ),
             ),
           ),
@@ -145,7 +142,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Icon(Icons.logout, color: Colors.red.shade400),
               ),
               title: Text('Cerrar Sesión', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red.shade400)),
-              onTap: () {},
+              onTap: () async {
+                await AuthService().signOut();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sesión cerrada'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
             ),
           ),
           const SizedBox(height: 40),

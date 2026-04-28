@@ -6,7 +6,14 @@ import 'inventory_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final ThemeMode themeMode;
+  final ValueChanged<bool> onThemeModeChanged;
+
+  const MainScreen({
+    super.key,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -27,7 +34,10 @@ class _MainScreenState extends State<MainScreen> {
         const AddItemScreen(),
         const InventoryScreen(),
         const ReportsScreen(),
-        const ProfileScreen(),
+        ProfileScreen(
+          isDarkMode: widget.themeMode == ThemeMode.dark,
+          onThemeModeChanged: widget.onThemeModeChanged,
+        ),
       ];
 
   @override

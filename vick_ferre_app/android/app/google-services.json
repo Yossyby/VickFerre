@@ -12,7 +12,12 @@
           "package_name": "com.example.vick_ferre_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "311891289894-0qfgk09jhi3t0rdf4ok7vaoebla2noau.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCJnYhP-38g9BNE7MXFnNyMU_PSlMlgYVo"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "311891289894-0qfgk09jhi3t0rdf4ok7vaoebla2noau.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "311891289894-7ptq6acjke022vfb2no9k68csvc0qs82.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vickFerreApp"
+              }
+            }
+          ]
         }
       }
     }

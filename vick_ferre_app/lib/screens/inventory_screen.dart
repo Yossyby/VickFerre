@@ -10,6 +10,15 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   final FirebaseFirestore db = FirebaseFirestore.instance;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _showOnlyLowStock = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   // ESTA FUNCIÓN ARREGLA EL ERROR DE "DOCUMENT REFERENCE"
   String validarDato(dynamic campo) {
@@ -37,13 +46,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
             children: [
               Expanded(
                 child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
                   decoration: InputDecoration(
                     hintText: 'Buscar por nombre o código...',
                     hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey),
-                      onPressed: () {},
+                      icon: const Icon(Icons.clear, color: Colors.grey),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
                     ),
                     filled: true,
                     fillColor: Colors.grey[100],
@@ -63,11 +83,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
             width: double.infinity,
             height: 40,
             child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.tune, color: Colors.black87, size: 20),
-              label: const Text(
-                'Filtros',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+              onPressed: () {
+                setState(() {
+                  _showOnlyLowStock = !_showOnlyLowStock;
+                });
+              },
+              icon: Icon(
+                _showOnlyLowStock ? Icons.list : Icons.tune,
+                color: Colors.black87,
+                size: 20,
+              ),
+              label: Text(
+                _showOnlyLowStock ? 'Mostrar todos' : 'Sólo stock bajo',
+                style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.grey.shade300),
