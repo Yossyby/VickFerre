@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "311891289894-bbnpi3314q40lqcauk61due84euvbi38.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vick_ferre_app",
+            "certificate_hash": "e22d80b6d3737e1b83dd40d2c2aaa12149104ac5"
+          }
+        },
+        {
           "client_id": "311891289894-0qfgk09jhi3t0rdf4ok7vaoebla2noau.apps.googleusercontent.com",
           "client_type": 3
         }
